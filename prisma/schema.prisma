@@ -30,6 +30,8 @@ model User {
   updatedAt   DateTime     @updatedAt
   Submissions Submission[]
   assignments Assignment[]
+  exam        Exam[]
+  examResult  ExamResult[]
 }
 
 model Assignment {
@@ -56,4 +58,30 @@ model Submission {
   userId       Int
   user         User   @relation(fields: [userId], references: [id])
   createdAt    DateTime   @default(now())
+}
+model Exam {
+  id        Int     @id @default(autoincrement())
+  subject   String
+  title     String
+  date      String
+  time      String
+  location  String
+  duration  String
+  status    String   // Upcoming | Completed | Cancelled
+  priority  String    // High | Medium | Low
+  createdBy Int
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  results   ExamResult[]
+  }
+model ExamResult {
+  id     Int  @id @default(autoincrement())
+  score  Int
+  examId Int
+  userId Int
+  createdAt DateTime @default(now())
+  details String?
+
+  exam   Exam @relation(fields: [examId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 }
