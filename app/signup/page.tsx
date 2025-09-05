@@ -8,16 +8,29 @@ export default function SignupPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit =async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    console.log({
+
+    const payload: {
+      name: FormDataEntryValue | null;
+      phone: FormDataEntryValue | null;
+      email: FormDataEntryValue | null;
+      password: FormDataEntryValue | null;
+    } = {
       name: formData.get('name'),
       phone: formData.get('phone'),
       email: formData.get('email'),
       password: formData.get('password'),
+    };
+     try {
+    const res = await fetch('http://localhost:5000/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
-    
+
+    if (!res.ok) throw new Error('Signup failed');
     // Show success message
     setShowSuccess(true);
     
@@ -25,6 +38,10 @@ export default function SignupPage() {
     setTimeout(() => {
       router.push('/login');
     }, 2000);
+  }catch (error) {
+    console.error(error);
+    alert('Signup failed. Please try again.');
+  }
   };
 
   return (

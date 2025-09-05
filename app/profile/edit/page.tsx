@@ -47,13 +47,26 @@ export default function ProfileEditPage() {
 
   const handleSave = async () => {
     setIsSaving(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    setIsEditing(false)
-    // In a real app, you would save to the backend here
-    alert('Profile updated successfully!')
+    try {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Not authenticated");
+
+    const res = await fetch("http://localhost:5000/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(profileData),
+    });
+    if (!res.ok) throw new Error("Failed to save profile");
+    const data = await res.json();
+    setProfileData(data.user || data);
+    alert("Profile updated successfully!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save profile");
   }
+  setIsSaving(false);
+  setIsEditing(false);
+}
 
   const handleCancel = () => {
     // Reset to original data

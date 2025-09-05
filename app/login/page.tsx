@@ -8,29 +8,45 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    
+
     console.log({
       email,
       password,
       remember: formData.get('remember') === 'on',
     });
-    
-    // Simulate authentication check
-    // In a real app, you would validate against your backend
-    if (email && password) {
-      // Simulate API call delay
-      setTimeout(() => {
-        setIsLoading(false);
+
+    try {
+      const res = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.token) {
+        // ✅ Store JWT in localStorage so AssignmentsPage can use it
+        localStorage.setItem('token', data.token);
+
+        // optional: store user info if needed
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // redirect to Assignments page (or dashboard)
         router.push('/dashboard');
-      }, 1000);
-    } else {
+      } else {
+        alert(data.error || 'Login failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Login failed: ' + err);
+    } finally {
       setIsLoading(false);
     }
   };
