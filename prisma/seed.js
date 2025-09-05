@@ -15,7 +15,8 @@ async function main() {
       name: 'Super Admin',
       email: 'admin@lms.com',
       password: hashedPassword,
-      role: 'ADMIN',
+      role: 'admin',
+      phone: '0000000000',
     },
   });
 

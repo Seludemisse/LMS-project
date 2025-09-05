@@ -3,6 +3,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { authGuard } from "../middleware/authGuard.js";
 
 
 const router = express.Router();
@@ -34,66 +35,59 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Signup failed" });
   }
 });
-
-// --- Login Route ---
+// --- LOGIN ---
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body
 
-    // find user
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(400).json({ error: "Invalid credentials" });
+    // 1. find user
+    const user = await prisma.user.findUnique({ where: { email } })
+    if (!user) return res.status(400).json({ error: "Invalid credentials" })
 
-    // check password
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ error: "Invalid credentials" });
+    // 2. check password
+    const valid = await bcrypt.compare(password, user.password)
+    if (!valid) return res.status(400).json({ error: "Invalid credentials" })
 
-    // create JWT
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "1d" });
+    // 3. issue JWT
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    )
 
-    res.json({ message: "Login successful", token, user: { id: user.id, name: user.name, email: user.email, role: user.role },});
+    // 4. send response
+    res.json({
+      message: "Login successful",
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role.toUpperCase() },
+    })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Login failed" });
+    console.error(err)
+    res.status(500).json({ error: "Login failed" })
   }
-});
-
-// --- Logout Route ---
-router.post("/logout", (req, res) => {
-  // Frontend should remove JWT from storage
-  res.json({ message: "Logout successful" });
-});
-
-// --- Reset Password Route ---
-router.post("/reset-password", async (req, res) => {
+})// --- Get current user ---
+router.get("/me", authGuard, async (req, res) => {
   try {
-    
-    const { email, newPassword } = req.body;
-
-    if (!email || !newPassword) {
-      return res.status(400).json({ error: "Email and newPassword are required" });
-    }
-
-    // find user
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // hash new password
-    const hashed = await bcrypt.hash(newPassword, 10);
-
-    // update password
-    await prisma.user.update({
-      where: { email },
-      data: { password: hashed },
-    });
-
-    res.json({ message: "Password reset successful" });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { id: true, name: true, email: true, role: true }
+    })
+    if (!user) return res.status(404).json({ error: "User not found" })
+    res.json(user)
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Password reset failed" });
+    res.status(500).json({ error: "Failed to fetch user" })
   }
-});
+})
+
+// --- LOGOUT ---
+router.post("/logout", (req, res) => {
+  // stateless → frontend just removes token
+  res.json({ message: "Logout successful" })
+})
 
 
 
-export default router;
+export default router
+
+
+
