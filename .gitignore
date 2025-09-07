@@ -1,3 +1,13 @@
+node_modules
+# Keep environment variables out of version control
+.env
+reset-admin.js
+test-bcrypt.js
+*.log
+
+
+/generated/prisma
+
 # Node modules
 /node_modules/
 
@@ -50,3 +60,4 @@ next-env.d.ts
 
 # Deployment / hosting
 .vercel
+

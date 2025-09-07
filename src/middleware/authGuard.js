@@ -1,4 +1,3 @@
-// middleware/authGuard.js
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
@@ -11,18 +10,22 @@ export const authGuard = (req, res, next) => {
   }
 
   const token = authHeader.split(" ")[1];
-
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // attach userId and role
+    // Normalize role to lowercase
+    req.user = {
+      userId: decoded.userId,
+      role: decoded.role.toLowerCase(), // 'admin' or 'user'
+    };
     next();
   } catch (err) {
     return res.status(401).json({ error: "Unauthorized: Invalid token" });
   }
 };
-// --- Admin Check Middleware ---
+
+// Admin middleware
 export const isAdmin = (req, res, next) => {
-  if (req.user.role !== "ADMIN") {
+  if (req.user.role !== "admin") {
     return res.status(403).json({ error: "Forbidden: Admins only" });
   }
   next();
